@@ -1,0 +1,20 @@
+erDiagram
+    DATA_SOURCE ||--o{ INGESTION_BATCH : supplies
+    DATA_SOURCE ||--o{ SOURCE_RECORD : identifies
+    INGESTION_BATCH ||--o{ SOURCE_RECORD_VERSION : contains
+    SOURCE_RECORD ||--o{ SOURCE_RECORD_VERSION : versions
+    SOURCE_RECORD_VERSION ||--|| NORMALIZED_RECORD : normalizes
+    NORMALIZED_RECORD ||--o{ RECORD_GENRE : has
+    GENRE ||--o{ RECORD_GENRE : classifies
+    NORMALIZED_RECORD ||--o{ RECORD_CREDIT : credits
+    PERSON ||--o{ RECORD_CREDIT : credited_as
+    SOURCE_RECORD_VERSION ||--o{ SOURCE_METRIC : measures
+    PIPELINE_RUN ||--o{ MATCH_CANDIDATE : evaluates
+    PIPELINE_RUN ||--o{ ENTITY_MEMBERSHIP : produces
+    MOVIE_ENTITY ||--o{ ENTITY_MEMBERSHIP : groups
+    SOURCE_RECORD_VERSION ||--o{ ENTITY_MEMBERSHIP : assigned
+    PIPELINE_RUN ||--o{ ENTITY_ATTRIBUTE : integrates
+    MOVIE_ENTITY ||--o{ ENTITY_ATTRIBUTE : describes
+    ENTITY_ATTRIBUTE ||--o{ ATTRIBUTE_PROVENANCE : supported_by
+    SOURCE_RECORD_VERSION ||--o{ ATTRIBUTE_PROVENANCE : observed_in
+    SOURCE_RECORD ||--o{ REVIEW_DECISION : reviewed

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ movie.movie_title or "Movie Details" }} | MovieSync</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">M</div>
+            <div><h2>Movie<span>Sync</span></h2><small>Data Integration System</small></div>
+        </div>
+        <p class="nav-label">WORKSPACE</p>
+        <a href="{{ url_for('index') }}" class="nav-link">▦ &nbsp; Overview</a>
+        <a href="{{ url_for('index') }}#engines" class="nav-link">⚙ &nbsp; Processing Engines</a>
+        <a href="{{ url_for('recommendations') }}" class="nav-link">★ &nbsp; Movie Recommendations</a>
+        <a href="{{ url_for('index') }}#movies" class="nav-link active">▤ &nbsp; Unified Movies</a>
+        <a href="{{ url_for('possible_matches') }}" class="nav-link">⇄ &nbsp; Possible Matches</a>
+        <a href="{{ url_for('index') }}#outputs" class="nav-link">▣ &nbsp; Output Files</a>
+    </aside>
+
+    <main class="main-content">
+        <a href="{{ url_for('index') }}#movies" class="back-link">← Back to Unified Movies</a>
+        <header class="detail-header">
+            <p class="eyebrow">UNIFIED MOVIE ENTITY</p>
+            <h1>{{ movie.movie_title or "Unknown Movie" }}</h1>
+            <p class="subtle">Entity ID: {{ movie.entity_id }} · Year: {{ movie.year or "Unknown" }}</p>
+        </header>
+
+        <section class="detail-stats">
+            <div class="stat-card"><p>Source Count</p><h2>{{ movie.source_count }}</h2><small>Contributing datasets</small></div>
+            <div class="stat-card"><p>Original Records</p><h2>{{ movie.record_count }}</h2><small>Records consolidated</small></div>
+            <div class="stat-card"><p>Unified Rating</p><h2>{{ movie.rating if movie.rating is not none else "—" }}</h2><small>Selected source rating</small></div>
+        </section>
+
+        <section class="section">
+            <div class="section-heading"><div><p class="eyebrow">CONSOLIDATED METADATA</p><h2>Unified Movie Information</h2></div></div>
+            <div class="detail-card">
+                <div class="detail-row"><strong>Genres</strong><span class="tag-container">{% for genre in movie.genres or [] %}<span class="metadata-tag">{{ genre }}</span>{% else %}Not available{% endfor %}</span></div>
+                <div class="detail-row"><strong>Director</strong><span>{{ movie.director or "Not available" }}</span></div>
+                <div class="detail-row"><strong>Cast</strong><span class="tag-container">{% for actor in movie.cast or [] %}<span class="metadata-tag">{{ actor }}</span>{% else %}Not available{% endfor %}</span></div>
+                <div class="detail-row"><strong>Overview</strong><span>{{ movie.overview or "Not available" }}</span></div>
+                <div class="detail-row"><strong>Sources</strong><span>{% for source in movie.sources or [] %}<span class="source-tag">{{ source }}</span>{% else %}Not available{% endfor %}</span></div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-heading"><div><p class="eyebrow">ENGINE 3 · MATCHING EVIDENCE</p><h2>Entity Resolution Explanation</h2><p class="subtle">Evidence used by the entity resolution engine to link records.</p></div></div>
+            {% if match_evidence %}
+                {% for match in match_evidence %}
+                <div class="match-card">
+                    <div class="match-card-top"><span class="complete">✓ CONFIRMED MATCH</span><span class="match-score">Score: {{ "%.4f"|format(match.score) }}</span></div>
+                    <div class="match-pair"><div class="match-record"><small>LEFT RECORD</small><strong>{{ match.left_id }}</strong></div><div class="match-connector">⟷</div><div class="match-record"><small>RIGHT RECORD</small><strong>{{ match.right_id }}</strong></div></div>
+                    <div class="match-details"><div><small>Matching method</small><strong>{{ match.method }}</strong></div><div><small>Decision</small><strong>{{ match.decision }}</strong></div>{% if match.identifier %}<div><small>Identifier field</small><strong>{{ match.identifier }}</strong></div>{% endif %}{% if match.year %}<div><small>Matching year</small><strong>{{ match.year }}</strong></div>{% endif %}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="detail-card"><p class="subtle">No direct confirmed match pair was recorded for this entity. It may be a single-source entity.</p></div>
+            {% endif %}
+            {% if possible_evidence %}
+            <div class="possible-box"><h3>Possible matches requiring review</h3><p class="subtle">These candidates were not automatically merged into this entity.</p>
+                {% for match in possible_evidence %}<div class="possible-row"><span>{{ match.left_record_id }}</span><span>↔</span><span>{{ match.right_record_id }}</span><strong>{{ "%.4f"|format(match.score) }}</strong></div>{% endfor %}
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="section">
+            <div class="section-heading"><div><p class="eyebrow">DATA LINEAGE</p><h2>Original Source Records</h2><p class="subtle">Compare the normalized values retained from each dataset.</p></div></div>
+            <div class="source-detail-grid">
+                {% for item in source_records %}
+                <div class="source-detail-card">
+                    <div class="source-detail-heading"><div><span class="source-tag">{{ item.record.source_name }}</span><h3>{{ item.record.movie_title or "Unknown title" }}</h3></div><span class="complete">Linked</span></div>
+                    <p class="record-id">Record ID: {{ item.record.record_id }}</p>
+                    <div class="detail-row"><strong>Year</strong><span>{{ item.record.year or "—" }}</span></div>
+                    <div class="detail-row"><strong>Genres</strong><span>{{ (item.record.genre or [])|join(", ") or "—" }}</span></div>
+                    <div class="detail-row"><strong>Director</strong><span>{{ item.record.director or "—" }}</span></div>
+                    <div class="detail-row"><strong>Rating</strong><span>{{ item.record.rating if item.record.rating is not none else "—" }}</span></div>
+                    <div class="detail-row"><strong>External ID</strong><span>{{ item.mapping.external_id or "—" }}</span></div>
+                    <div class="detail-row"><strong>TMDB ID</strong><span>{{ item.mapping.tmdb_id or "—" }}</span></div>
+                    <div class="detail-row"><strong>IMDb ID</strong><span>{{ item.mapping.imdb_id or "—" }}</span></div>
+                    <div class="detail-row"><strong>MovieLens ID</strong><span>{{ item.mapping.movielens_id or "—" }}</span></div>
+                </div>
+                {% else %}<p class="subtle">No original source records were found for this entity.</p>{% endfor %}
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

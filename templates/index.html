@@ -1,0 +1,625 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Integration Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">M</div>
+            <div>
+                <h2>Movie<span>Sync</span></h2>
+                <small>Data Integration System</small>
+            </div>
+        </div>
+
+        <p class="nav-label">WORKSPACE</p>
+        <a href="{{ url_for('index') }}" class="nav-link active">▦ &nbsp; Overview</a>
+        <a href="{{ url_for('index') }}#engines" class="nav-link">⚙ &nbsp; Processing Engines</a>
+        <a href="{{ url_for('recommendations') }}" class="nav-link">★ &nbsp; Movie Recommendations</a>
+        <a href="{{ url_for('index') }}#movies" class="nav-link">▤ &nbsp; Unified Movies</a>
+        <a href="{{ url_for('possible_matches') }}" class="nav-link">⇄ &nbsp; Possible Matches</a>
+        <a href="{{ url_for('index') }}#outputs" class="nav-link">▣ &nbsp; Output Files</a>
+
+        <div class="sidebar-bottom">
+            <div class="system-status">
+                <span class="status-dot"></span>
+                Local system
+                <small>Development environment</small>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">DATA MANAGEMENT / OVERVIEW</p>
+                <h1>Movie Data Integration</h1>
+            </div>
+            <div class="top-right">
+                <span class="live-badge">● SYSTEM ONLINE</span>
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <section class="welcome">
+            <div>
+                <p class="eyebrow light">UNIFIED DATA PLATFORM</p>
+                <h2>One platform. Multiple data sources.</h2>
+                <p>Ingest, normalize, resolve and integrate movie records from heterogeneous datasets.</p>
+            </div>
+            <form action="{{ url_for('run_pipeline') }}" method="POST">
+               <button class="run-button" id="run-pipeline-button" type="submit"
+                    {% if status.running %}disabled{% endif %}>
+                    {% if status.running %}Pipeline Running...{% else %}▶ &nbsp; Run Complete Pipeline{% endif %}
+                </button>
+            </form>
+        </section>
+
+
+<section class="section" id="dataset-upload">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">DYNAMIC DATA INGESTION</p>
+            <h2>Upload Your Datasets</h2>
+            <p class="subtle">
+                Select multiple movie datasets to start a new integration workflow.
+            </p>
+        </div>
+    </div>
+
+    <form action="{{ url_for('upload_datasets') }}"
+          method="POST"
+          enctype="multipart/form-data"
+          class="upload-card">
+
+        
+<label for="dataset-files" class="upload-dropzone">
+    <span class="upload-icon">⇧</span>
+    <strong>Browse files from your laptop</strong>
+    <span>CSV, TXT, XLSX and XLSM · Multiple files supported</span>
+    <span class="upload-select">Choose Files</span>
+</label>
+
+<input
+    type="file"
+    id="dataset-files"
+    name="datasets"
+    accept=".csv,.txt,.xlsx,.xlsm"
+    multiple
+    required
+>
+
+<div class="selected-files-panel">
+    <div class="selected-files-heading">
+        <strong>Selected Datasets</strong>
+        <span id="file-count">0 files selected</span>
+    </div>
+
+    <div id="selected-files">
+        <p class="empty-files">No files selected yet.</p>
+    </div>
+</div>
+
+<button type="submit" class="upload-button" id="upload-button" disabled>
+    Upload Datasets
+</button>
+
+</form>
+
+<form action="{{ url_for('clear_uploads') }}"
+      method="POST"
+      onsubmit="return confirm('Are you sure you want to clear all uploaded datasets?');">
+
+    <button type="submit" class="clear-uploads-button">
+        Clear All Uploaded Datasets
+    </button>
+
+</form>
+
+<section class="section monitor-section" id="monitor">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">LIVE EXECUTION MONITOR</p>
+            <h2>Pipeline Activity</h2>
+        </div>
+        <span id="monitor-status" class="pending">● READY</span>
+    </div>
+
+    <div class="monitor-card">
+        <div class="monitor-top">
+            <div>
+                <h3 id="current-engine">Waiting for execution</h3>
+                <p id="execution-message">Run the pipeline to see live progress.</p>
+            </div>
+            <div class="timer">
+                <small>ELAPSED TIME</small>
+                <strong id="elapsed-time">0.0s</strong>
+            </div>
+        </div>
+
+        <div class="progress-info">
+            <span>Overall progress</span>
+            <strong id="progress-value">0%</strong>
+        </div>
+
+        <div class="monitor-progress">
+            <div id="progress-fill"></div>
+        </div>
+
+        <div class="monitor-engines">
+            <div class="monitor-engine" id="monitor-engine-1">
+                <span class="monitor-engine-icon">1</span>
+                <div>
+                    <strong>Data Ingestion</strong>
+                    <small>Engine 1</small>
+                </div>
+                <span class="engine-state">Pending</span>
+            </div>
+
+            <div class="monitor-engine" id="monitor-engine-2">
+                <span class="monitor-engine-icon">2</span>
+                <div>
+                    <strong>Data Normalization</strong>
+                    <small>Engine 2</small>
+                </div>
+                <span class="engine-state">Pending</span>
+            </div>
+
+            <div class="monitor-engine" id="monitor-engine-3">
+                <span class="monitor-engine-icon">3</span>
+                <div>
+                    <strong>Entity Resolution</strong>
+                    <small>Engine 3</small>
+                </div>
+                <span class="engine-state">Pending</span>
+            </div>
+
+            <div class="monitor-engine" id="monitor-engine-4">
+                <span class="monitor-engine-icon">4</span>
+                <div>
+                    <strong>Data Integration</strong>
+                    <small>Engine 4</small>
+                </div>
+                <span class="engine-state">Pending</span>
+            </div>
+        </div>
+
+        <div class="log-heading">
+            <strong>Execution Logs</strong>
+            <span>LIVE OUTPUT</span>
+        </div>
+
+        <div class="log-terminal" id="pipeline-logs">
+            <div class="log-placeholder">Waiting for pipeline execution...</div>
+        </div>
+    </div>
+</section>
+
+
+        <section class="section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">PERFORMANCE SNAPSHOT</p>
+                    <h2>System Overview</h2>
+                </div>
+                <span class="subtle">Based on generated output files</span>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-icon blue">▤</span>
+                    <p>Total Input Records</p>
+                    <h2>{{ "{:,}".format(data.raw_count) }}</h2>
+                    <small>Across all uploaded datasets</small>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon purple">◈</span>
+                    <p>Normalized Records</p>
+                    <h2>{{ "{:,}".format(data.normalized_count) }}</h2>
+                    <small>Standardized records</small>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon green">◎</span>
+                    <p>Unified Entities</p>
+                    <h2>{{ "{:,}".format(data.unified_count) }}</h2>
+                    <small>Consolidated movies</small>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon orange">⇄</span>
+                    <p>Confirmed Matches</p>
+                    <h2>{{ "{:,}".format(data.confirmed_matches) }}</h2>
+                    <small>Confirmed record pairs</small>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">DATA SOURCES</p>
+                    <h2>Source Distribution</h2>
+                </div>
+            </div>
+
+            <div class="source-grid">
+                {% for source, count in data.source_counts.items() %}
+                <div class="source-card">
+                    <div class="source-top">
+                        <strong>{{ source }}</strong>
+                        <span>{{ "{:,}".format(count) }} records</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill"
+                            style="width: {{ (count / data.raw_count * 100) if data.raw_count else 0 }}%">
+                        </div>
+                    </div>
+                    <small>{{ "%.1f"|format(count / data.raw_count * 100 if data.raw_count else 0) }}% of input records</small>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="section" id="engines">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">PROCESSING WORKFLOW</p>
+                    <h2>Four-Engine Architecture</h2>
+                </div>
+            </div>
+
+            <div class="engine-grid">
+                {% for engine in data.engines %}
+                <div class="engine-card">
+                    <div class="engine-top">
+                        <span class="engine-number">{{ loop.index }}</span>
+                        {% if engine.completed %}
+                            <span class="complete">● Ready</span>
+                        {% else %}
+                            <span class="pending">● Pending</span>
+                        {% endif %}
+                    </div>
+                    <h3>{{ engine.title }}</h3>
+                    <p>{{ engine.description }}</p>
+                    <div class="engine-footer">
+                        <span>{{ engine.name }}</span>
+                        <span>→</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        {% if possible_view %}
+        <section class="section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">REVIEW REQUIRED</p>
+                    <h2>Possible Matches</h2>
+                    <p class="subtle">These candidate pairs have not been automatically merged.</p>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Left Record</th>
+                            <th>Right Record</th>
+                            <th>Similarity Score</th>
+                            <th>Method</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for match in possible_records %}
+                        <tr>
+                            <td>{{ match.left_record_id }}</td>
+                            <td>{{ match.right_record_id }}</td>
+                            <td>{{ "%.4f"|format(match.score) }}</td>
+                            <td>{{ match.method }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4">No possible matches available.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% else %}
+        <section class="section" id="movies">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">CONSOLIDATED DATABASE</p>
+                    <h2>Unified Movie Explorer</h2>
+                </div>
+                <span class="subtle">{{ "{:,}".format(data.search_total) }} results</span>
+            </div>
+
+            <form action="{{ url_for('index') }}" method="GET" class="search-form">
+                <input type="text" name="q" value="{{ data.search_query }}"
+                    placeholder="Search movie title, director or year...">
+                <button type="submit">Search</button>
+                {% if data.search_query %}
+                    <a href="{{ url_for('index') }}" class="clear-link">Clear</a>
+                {% endif %}
+            </form>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Entity ID</th>
+                            <th>Movie Title</th>
+                            <th>Year</th>
+                            <th>Director</th>
+                            <th>Sources</th>
+                            <th>Records</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movie in data.movies %}
+                        <tr>
+                            <td class="entity-id">{{ movie.entity_id }}</td>
+                            <td class="movie-title">
+    <a class="movie-link"
+       href="{{ url_for('movie_detail', entity_id=movie.entity_id) }}">
+        {{ movie.movie_title or "Unknown" }}
+    </a>
+</td>
+<td>{{ movie.year or "—" }}</td>
+                            <td>{{ movie.director or "—" }}</td>
+                            <td>
+                                {% for source in movie.sources %}
+                                    <span class="source-tag">{{ source }}</span>
+                                {% endfor %}
+                            </td>
+                            <td>{{ movie.record_count }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6">No movies found. Run the pipeline first.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-note">Showing up to 100 matching movies per page.</p>
+        </section>
+        {% endif %}
+
+        <section class="section" id="outputs">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">GENERATED ARTIFACTS</p>
+                    <h2>Output Files</h2>
+                </div>
+            </div>
+            <div class="file-grid">
+                {% for file in data.output_files %}
+                <div class="file-item">
+                    <span class="file-icon">▤</span>
+                    <span>{{ file.name }}</span>
+                    {% if file.exists %}
+                        <span class="complete">Available</span>
+                    {% else %}
+                        <span class="pending">Missing</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <footer>
+            MovieSync · Multi-Source Movie Data Integration & Entity Resolution
+            <br>Built with Python, Pandas and Flask
+        </footer>
+    </main>
+</div>
+
+
+<script>
+
+const fileInput = document.getElementById("dataset-files");
+const fileList = document.getElementById("selected-files");
+const fileCount = document.getElementById("file-count");
+const uploadButton = document.getElementById("upload-button");
+
+let selectedFiles = new DataTransfer();
+
+fileInput.addEventListener("change", function () {
+    const newFiles = Array.from(this.files);
+
+    newFiles.forEach(file => {
+        const duplicate = Array.from(selectedFiles.files).some(
+            existing =>
+                existing.name === file.name &&
+                existing.size === file.size &&
+                existing.lastModified === file.lastModified
+        );
+
+        if (!duplicate) {
+            selectedFiles.items.add(file);
+        }
+    });
+
+    fileInput.files = selectedFiles.files;
+    renderFiles();
+});
+
+function renderFiles() {
+    const files = Array.from(selectedFiles.files);
+
+    fileList.replaceChildren();
+    fileCount.textContent = files.length + " files selected";
+    uploadButton.disabled = files.length === 0;
+
+    if (!files.length) {
+        fileList.textContent = "No files selected yet.";
+        return;
+    }
+
+    files.forEach((file, index) => {
+        const item = document.createElement("div");
+        item.className = "selected-file-item";
+
+        const name = document.createElement("span");
+        name.textContent = "📄 " + file.name;
+
+        const size = document.createElement("small");
+        size.textContent = (file.size / 1024).toFixed(1) + " KB";
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "✕";
+
+        remove.addEventListener("click", () => {
+            const updated = new DataTransfer();
+
+            files.forEach((f, i) => {
+                if (i !== index) updated.items.add(f);
+            });
+
+            selectedFiles = updated;
+            fileInput.files = selectedFiles.files;
+            renderFiles();
+        });
+
+        item.append(name, size, remove);
+        fileList.appendChild(item);
+    });
+}
+
+const monitorStatus = document.getElementById("monitor-status");
+const currentEngine = document.getElementById("current-engine");
+const executionMessage = document.getElementById("execution-message");
+const elapsedTime = document.getElementById("elapsed-time");
+const progressValue = document.getElementById("progress-value");
+const progressFill = document.getElementById("progress-fill");
+const logsContainer = document.getElementById("pipeline-logs");
+const runButton = document.getElementById("run-pipeline-button");
+
+let previousLogCount = 0;
+let pipelineWasRunning = false;
+let refreshedAfterCompletion = false;
+
+
+async function updateMonitor() {
+    try {
+        const response = await fetch("/pipeline-status", {
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error("Unable to fetch pipeline status");
+        }
+
+        const data = await response.json();
+ // Track pipeline execution and refresh the dashboard after success.
+if (data.running) {
+    pipelineWasRunning = true;
+}
+
+if (
+    pipelineWasRunning &&
+    !data.running &&
+    data.progress === 100 &&
+    !refreshedAfterCompletion
+) {
+    refreshedAfterCompletion = true;
+    window.location.reload();
+    return;
+}
+        // Overall status
+        monitorStatus.textContent = "● " + data.message.toUpperCase();
+        monitorStatus.className = data.running
+            ? "running"
+            : data.progress === 100
+                ? "complete"
+                : data.message.toLowerCase().includes("failed")
+                    ? "failed"
+                    : "pending";
+
+        // Current engine and message
+        currentEngine.textContent = data.current_engine || (
+            data.running ? "Starting pipeline..." :
+            data.progress === 100 ? "Pipeline completed" :
+            "Waiting for execution"
+        );
+
+        executionMessage.textContent = data.message;
+
+        // Time
+        elapsedTime.textContent = (data.elapsed || 0).toFixed(1) + "s";
+
+        // Progress
+        progressValue.textContent = data.progress + "%";
+        progressFill.style.width = data.progress + "%";
+
+        // Engine cards
+        data.engines.forEach((engine, index) => {
+            const card = document.getElementById(
+                "monitor-engine-" + (index + 1)
+            );
+
+            if (!card) return;
+
+            const state = card.querySelector(".engine-state");
+
+            state.textContent =
+                engine.status.charAt(0).toUpperCase() +
+                engine.status.slice(1);
+
+            card.classList.remove(
+                "pending", "running", "completed", "failed"
+            );
+
+            card.classList.add(engine.status);
+        });
+
+        // Execution logs
+        if (data.logs.length !== previousLogCount) {
+            logsContainer.replaceChildren();
+
+            data.logs.forEach(line => {
+                const log = document.createElement("div");
+                log.textContent = line;
+                logsContainer.appendChild(log);
+            });
+
+            previousLogCount = data.logs.length;
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        // Run button
+        if (runButton) {
+            runButton.disabled = data.running;
+            runButton.textContent = data.running
+                ? "Pipeline Running..."
+                : "▶ Run Complete Pipeline";
+        }
+
+    } catch (error) {
+        console.error("Monitor error:", error);
+    }
+}
+
+// Initial update and continuous polling
+updateMonitor();
+setInterval(updateMonitor, 1000);
+
+
+</script>
+</body>
+</html>
+
+
